@@ -21,7 +21,7 @@ class InstallCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'breeze:install {stack : The development stack that should be installed (blade,react,vue,api)}
+    protected $signature = 'breeze:install {stack : The development stack that should be installed (blade,react,react-ts,vue,api)}
                             {--dark : Indicate that dark mode support should be installed}
                             {--inertia : Indicate that the Vue Inertia stack should be installed (Deprecated)}
                             {--pest : Indicate that Pest should be installed}
@@ -40,7 +40,7 @@ class InstallCommand extends Command
      *
      * @var array<int, string>
      */
-    protected $stacks = ['blade', 'react', 'vue', 'api'];
+    protected $stacks = ['blade', 'react', 'react-ts', 'vue', 'api'];
 
     /**
      * Execute the console command.
@@ -53,13 +53,15 @@ class InstallCommand extends Command
             return $this->installInertiaVueStack();
         } elseif ($this->argument('stack') === 'react') {
             return $this->installInertiaReactStack();
+        } elseif ($this->argument('stack') === 'react-ts') {
+            return $this->installInertiaReactTypescriptStack();
         } elseif ($this->argument('stack') === 'api') {
             return $this->installApiStack();
         } elseif ($this->argument('stack') === 'blade') {
             return $this->installBladeStack();
         }
 
-        $this->components->error('Invalid stack. Supported stacks are [blade], [react], [vue], and [api].');
+        $this->components->error('Invalid stack. Supported stacks are [blade], [react], [react-ts], [vue], and [api].');
 
         return 1;
     }
@@ -193,6 +195,24 @@ class InstallCommand extends Command
         );
 
         ksort($packages[$configurationKey]);
+
+        file_put_contents(
+            base_path('package.json'),
+            json_encode($packages, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT).PHP_EOL
+        );
+    }
+
+    protected static function updateNodeScripts($commands)
+    {
+        if (! file_exists(base_path('package.json'))) {
+            return;
+        }
+
+        $packages = json_decode(file_get_contents(base_path('package.json')), true);
+
+        foreach($commands as $key => $value) {
+            $packages['scripts'][$key] = $value;
+        }
 
         file_put_contents(
             base_path('package.json'),
